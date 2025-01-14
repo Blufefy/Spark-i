@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spark AI Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #00FFFF;
+            --secondary-color: #0080FF;
+            --background-dark: #1a1a1a;
+            --text-dark: #ffffff;
+            --shadow-color: rgba(0, 255, 255, 0.2);
+            --gradient: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(45deg, var(--background-dark), #2a2a2a);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        /* Splash Screen */
+        #splash {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(45deg, #000, #1a1a1a);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: splashFade 5s forwards;
+        }
+
+        @keyframes splashFade {
+            0%, 80% { opacity: 1; }
+            100% { opacity: 0; visibility: hidden; }
+        }
+
+        #spark-logo {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        /* Main Container */
+        #main-container {
+            width: 100%;
+            max-width: 1200px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 0 20px var(--shadow-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* System Info */
+        #system-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 0.9em;
+        }
+
+        .info-item i {
+            margin-right: 8px;
+            color: var(--primary-color);
+        }
+
+        /* Chat Container */
+        #chat-container {
+            height: 60vh;
+            overflow-y: auto;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            max-width: 80%;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            animation: messageAppear 0.3s ease-out;
+            word-wrap: break-word;
+            position: relative;
+        }
+
+        @keyframes messageAppear {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .user-message {
+            background: var(--gradient);
+            margin-left: auto;
+            padding-right: 35px;
+        }
+
+        .ai-message {
+            background: rgba(255, 255, 255, 0.1);
+            margin-right: auto;
+            padding-left: 35px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .message-icon {
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--gradient);
+        }
+
+        .user-message .message-icon {
+            right: -12px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .ai-message .message-icon {
+            left: -12px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* Search Component */
+        #search-component {
+            position: fixed;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 100;
+        }
+
+        .round-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--gradient);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .round-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
+        }
+
+        #search-bar {
+            position: absolute;
+            right: 60px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            width: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        #search-bar.active {
+            width: 300px;
+            padding: 5px 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        #search-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 10px;
+            color: var(--text-dark);
+            outline: none;
+            font-size: 16px;
+        }
+
+        .action-button {
+            background: transparent;
+            border: none;
+            padding: 10px;
+            color: var(--text-dark);
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #search-bar.active .action-button {
+            opacity: 1;
+        }
+
+        .action-button:hover {
+            color: var(--primary-color);
+            transform: scale(1.1);
+        }
+
+        .action-button.hidden {
+            display: none;
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            position: relative;
+            width: 20px;
+            height: 20px;
+        }
+
+        .loading div {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            animation: loading 1.2s linear infinite;
+        }
+
+        .loading div:nth-child(1) { left: 0; animation-delay: 0s; }
+        .loading div:nth-child(2) { left: 8px; animation-delay: 0.4s; }
+        .loading div:nth-child(3) { left: 16px; animation-delay: 0.8s; }
+
+        @keyframes loading {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            #search-component {
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                top: auto;
+                transform: none;
+            }
+
+            #search-bar.active {
+                width: calc(100vw - 100px);
+                right: 70px;
+                bottom: 20px;
+                top: auto;
+                transform: none;
+            }
+
+            .info-item {
+                font-size: 0.8em;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--gradient);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-color);
+        }
+        /* Mic Button Styles */
+#mic-button-container {
+    position: fixed;
+    right: 30px;
+    top: calc(50% - 100px); /* Position above search toggle */
+    z-index: 99; /* Below splash screen but above other content */
+}
+
+#mic-button {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: var(--gradient);
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 255, 255, 0.3);
+    opacity: 0; /* Start hidden */
+    visibility: hidden;
+    transform: scale(0.8);
+}
+
+#mic-button.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+}
+
+#mic-button.listening {
+    background: #ff0000;
+    animation: micPulse 1.5s infinite;
+}
+
+@keyframes micPulse {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.4); }
+    70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); }
+}
+
+/* Update media queries */
+@media (max-width: 768px) {
+    #mic-button-container {
+        right: 20px;
+        top: calc(50% - 60px);
+    }
+}
+    </style>
+</head>
+<body>
+    <!-- Splash Screen -->
+    <div id="splash">
+        <svg id="spark-logo" width="200" height="200" viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="90" fill="url(#gradient)" />
+            <path d="M60 100 L100 60 L140 100 L100 140 Z" fill="white">
+                <animate attributeName="opacity" values="1;0.5;1" dur="5s" repeatCount="indefinite"/>
+            </path>
+            <defs>
+                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#1900ff;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#00ffff;stop-opacity:1" />
+                </linearGradient>
+            </defs>
+        </svg>
+        <h1 style="color: #00FFFF; margin-top: 20px; font-size: 2em;">Welcome to Spark </h1>
+    </div>
+
+    <!-- Main Container -->
+    <div id="main-container">
+        <div id="system-info">
+            <div class="info-item">
+                <i class="fas fa-clock"></i>
+                <span id="datetime">2025-01-07 08:41:08 UTC</span>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-user"></i>
+                <span id="username">user</span>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-battery-three-quarters"></i>
+                <span id="battery">Checking battery...</span>
+            </div>
+            <div class="info-item">
+                <i class="fas fa-wifi"></i>
+                <span id="network">Checking network...</span>
+            </div>
+        </div>
+
+        <div id="chat-container">
+            <!-- Messages will appear here -->
+        </div>
+    </div>
+<!-- Add this before the search-component -->
+<div id="mic-button-container">
+    <button id="mic-button" aria-label="Voice Input">
+        <svg width="16px" height="16px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 5C8 2.79086 9.79086 1 12 1C14.2091 1 16 2.79086 16 5V12C16 14.2091 14.2091 16 12 16C9.79086 16 8 14.2091 8 12V5Z" fill="#000000"/>
+            <path d="M6.25 11.8438V12C6.25 13.525 6.8558 14.9875 7.93414 16.0659C9.01247 17.1442 10.475 17.75 12 17.75C13.525 17.75 14.9875 17.1442 16.0659 16.0659C17.1442 14.9875 17.75 13.525 17.75 12V11.8438C17.75 11.2915 18.1977 10.8438 18.75 10.8438H19.25C19.8023 10.8438 20.25 11.2915 20.25 11.8437V12C20.25 14.188 19.3808 16.2865 17.8336 17.8336C16.5842 19.0831 14.9753 19.8903 13.25 20.1548V22C13.25 22.5523 12.8023 23 12.25 23H11.75C11.1977 23 10.75 22.5523 10.75 22V20.1548C9.02471 19.8903 7.41579 19.0831 6.16637 17.8336C4.61919 16.2865 3.75 14.188 3.75 12V11.8438C3.75 11.2915 4.19772 10.8438 4.75 10.8438H5.25C5.80228 10.8438 6.25 11.2915 6.25 11.8438Z" fill="#000000"/>
+            </svg>
+    </button>
+</div>
+    <!-- Search Component -->
+    <div id="search-component">
+        <button id="search-toggle" class="round-button">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+                <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0"/>
+              </svg>
+        </button>
+        <div id="search-bar" class="hidden">
+            <input type="text" id="search-input" placeholder="Ask Spark anything...">
+            <button id="search-close" class="action-button">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-power" viewBox="0 0 16 16">
+                    <path d="M7.5 1v7h1V1z"/>
+                    <path d="M3 8.812a5 5 0 0 1 2.578-4.375l-.485-.874A6 6 0 1 0 11 3.616l-.501.865A5 5 0 1 1 3 8.812"/>
+                  </svg>
+            </button>
+            <button id="search-send" class="action-button hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-send-fill" viewBox="0 0 16 16">
+                    <path d="M15.964.686a.5.5 0 0 0-.65-.65L.767 5.855H.766l-.452.18a.5.5 0 0 0-.082.887l.41.26.001.002 4.995 3.178 3.178 4.995.002.002.26.41a.5.5 0 0 0 .886-.083zm-1.833 1.89L6.637 10.07l-.215-.338a.5.5 0 0 0-.154-.154l-.338-.215 7.494-7.494 1.178-.471z"/>
+                  </svg>
+            </button>
+        </div>
+    </div>
+    <!-- Add this just before the closing </body> tag -->
+<script>
+ document.addEventListener('DOMContentLoaded', function() {
+    // Configuration
+    const CONFIG = {
+        CURRENT_user: 'user',
+        INITIAL_DATE: '2025-01-07 19:02:20',
+        WAKE_WORDS: ['hey spark', 'hi spark', 'okay spark', 'friday'],
+        MAX_MESSAGE_HISTORY: 50,
+        TYPING_SPEED: 50, // ms per character
+        GEMINI_API_KEY: 'AIzaSyDkdXhTEtW4xWjwZ8bmZRxGIdCTBhgAtik', // Replace with your actual API key
+        GEMINI_API_URL: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent'
+    };
+
+    // State Management
+    const state = {
+        isListening: false,
+        isTyping: false,
+        messageQueue: [],
+        currentLanguage: 'en-US',
+        lastActivity: new Date(),
+    };
+
+    // DOM Elements
+    const elements = {
+        splash: document.getElementById('splash'),
+        searchToggle: document.getElementById('search-toggle'),
+        searchBar: document.getElementById('search-bar'),
+        searchInput: document.getElementById('search-input'),
+        searchClose: document.getElementById('search-close'),
+        searchSend: document.getElementById('search-send'),
+        chatContainer: document.getElementById('chat-container'),
+        systemInfo: {
+            datetime: document.getElementById('datetime'),
+            username: document.getElementById('username'),
+            battery: document.getElementById('battery'),
+            network: document.getElementById('network')
+        }
+    };
+
+    // Utility Functions
+    const utils = {
+        sleep: (ms) => new Promise(resolve => setTimeout(resolve, ms)),
+        
+        formatDate: (date) => {
+            return date.toISOString().replace('T', ' ').split('.')[0] + ' UTC';
+        },
+
+        typeWriter: async (element, text) => {
+            let i = 0;
+            state.isTyping = true;
+            while (i < text.length && state.isTyping) {
+                element.textContent += text.charAt(i);
+                i++;
+                await utils.sleep(CONFIG.TYPING_SPEED);
+            }
+            element.textContent = text; // Complete the text if interrupted
+            state.isTyping = false;
+        },
+
+        createLoadingDots: () => {
+            const loading = document.createElement('div');
+            loading.className = 'loading';
+            for (let i = 0; i < 3; i++) {
+                loading.appendChild(document.createElement('div'));
+            }
+            return loading;
+        }
+    };
+
+    // Gemini API Handler
+    class GeminiAPIHandler {
+        constructor() {
+            this.API_KEY = CONFIG.GEMINI_API_KEY;
+            this.API_URL = CONFIG.GEMINI_API_URL;
+        }
+
+        async generateResponse(prompt) {
+            try {
+                const response = await fetch(`${this.API_URL}?key=${this.API_KEY}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        contents: [{
+                            parts: [{
+                                text: prompt
+                            }]
+                        }]
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('API request failed');
+                }
+
+                const data = await response.json();
+                return data.candidates[0].content.parts[0].text;
+            } catch (error) {
+                console.error('Error calling Gemini API:', error);
+                return "I apologize, but I'm having trouble connecting to my knowledge base right now.";
+            }
+        }
+    }
+
+    // System Monitor
+    class SystemMonitor {
+        constructor() {
+            this.updateInterval = null;
+            this.initializeSystemInfo();
+        }
+
+        initializeSystemInfo() {
+            elements.systemInfo.username.textContent = CONFIG.CURRENT_user;
+            elements.systemInfo.datetime.textContent = CONFIG.INITIAL_DATE;
+            this.updateInterval = setInterval(() => this.updateSystemInfo(), 1000);
+            this.updateSystemInfo();
+        }
+
+        async updateSystemInfo() {
+            // Update datetime
+            const now = new Date();
+            elements.systemInfo.datetime.textContent = utils.formatDate(now);
+
+            // Update battery status
+            if ('getBattery' in navigator) {
+                try {
+                    const battery = await navigator.getBattery();
+                    const level = Math.round(battery.level * 100);
+                    const charging = battery.charging ? '⚡' : '';
+                    elements.systemInfo.battery.textContent = `${level}% ${charging}`;
+                } catch (error) {
+                    elements.systemInfo.battery.textContent = 'Battery N/A';
+                }
+            }
+
+            // Update network status
+            const online = navigator.onLine;
+            const connection = navigator.connection;
+            const networkType = connection ? connection.effectiveType : '';
+            elements.systemInfo.network.textContent = `${online ? 'Online' : 'Offline'}${networkType ? ` (${networkType})` : ''}`;
+        }
+    }
+
+    // Message Handler
+    class MessageHandler {
+        constructor() {
+            this.messageHistory = [];
+            this.geminiHandler = new GeminiAPIHandler();
+        }
+
+        async addMessage(text, isuser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isuser ? 'user-message' : 'ai-message'}`;
+            
+            // Add user icon
+            const iconDiv = document.createElement('div');
+            iconDiv.className = 'message-icon';
+            iconDiv.innerHTML = isuser ? 
+                '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 7C9.65685 7 11 5.65685 11 4C11 2.34315 9.65685 1 8 1C6.34315 1 5 2.34315 5 4C5 5.65685 6.34315 7 8 7Z" fill="#000000"/><path d="M14 12C14 10.3431 12.6569 9 11 9H5C3.34315 9 2 10.3431 2 12V15H14V12Z" fill="#000000"/></svg>' : 
+                '  <svg id="spark-logo" width="200" height="200" viewBox="0 0 200 200"><circle cx="100" cy="100" r="90" fill="url(#gradient)" /><path d="M60 100 L100 60 L140 100 L100 140 Z" fill="white"><animate attributeName="opacity" values="1;0.5;1" dur="2s" repeatCount="indefinite"/> </path><defs><linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">  <stop offset="0%" style="stop-color:#00FFFF;stop-opacity:1" /> <stop offset="100%" style="stop-color:#0080FF;stop-opacity:1" /> </linearGradient> </defs> </svg>';
+            messageDiv.appendChild(iconDiv);
+
+            // Add message text
+            const textContent = document.createElement('span');
+            messageDiv.appendChild(textContent);
+            elements.chatContainer.appendChild(messageDiv);
+
+            // Animate text appearance
+            if (!isuser) {
+                const loadingDots = utils.createLoadingDots();
+                messageDiv.appendChild(loadingDots);
+                await utils.sleep(1000); // Simulate thinking
+                loadingDots.remove();
+                await utils.typeWriter(textContent, text);
+            } else {
+                textContent.textContent = text;
+            }
+
+            // Scroll to bottom
+            elements.chatContainer.scrollTop = elements.chatContainer.scrollHeight;
+
+            // Store in history
+            this.messageHistory.push({
+                text,
+                isuser,
+                timestamp: new Date().toISOString()
+            });
+
+            // Limit history size
+            if (this.messageHistory.length > CONFIG.MAX_MESSAGE_HISTORY) {
+                this.messageHistory.shift();
+            }
+        }
+
+        async processQuery(query) {
+            if (!query.trim()) return;
+
+            // Add user message
+            await this.addMessage(query, true);
+
+            // Process special commands
+            if (this.handleSpecialCommands(query)) return;
+
+            // Generate and add AI response
+            const response = await this.generateResponse(query);
+            await this.addMessage(response, false);
+        }
+
+        handleSpecialCommands(query) {
+            const lowerQuery = query.toLowerCase();
+
+            // System commands
+            const systemCommands = {
+                'who are you,what are you': () => {
+                    this.addMessage("I'm Spark, an AI assistant powered by advanced language models.", false);
+                    return true;
+                },
+                'clear': () => {
+                    elements.chatContainer.innerHTML = '';
+                    this.messageHistory = [];
+                    return true;
+                },
+                'clear chat': () => {
+                    elements.chatContainer.innerHTML = '';
+                    this.messageHistory = [];
+                    return true;
+                }
+            };
+
+            for (const [command, handler] of Object.entries(systemCommands)) {
+                if (lowerQuery.includes(command)) {
+                    return handler();
+                }
+            }
+
+            return false;
+        }
+
+        async generateResponse(query) {
+            // Check if query is about the AI system itself
+            const systemQueries = [
+                'who are you',
+                'what can you do',
+                'help',
+                'system',
+                'settings',
+                'what is spark',
+                'who made spark',
+                'where can i find spark'
+            ];
+
+            if (systemQueries.some(sq => query.toLowerCase().includes(sq))) {
+                return this.generateSystemResponse(query);
+            }
+
+            // Use Gemini API for general queries
+            try {
+                return await this.geminiHandler.generateResponse(query);
+            } catch (error) {
+                console.error('Error generating response:', error);
+                return "I apologize, but I'm having trouble processing your request right now.";
+            }
+        }
+
+        generateSystemResponse(query) {
+            const responses = {
+                'who are you': "I'm Spark, your AI assistant powered by advanced language models.",
+                'what can you do': "I can help you with answering questions, providing information, and assisting with various topics.",
+                'help': "I can assist you with various queries. Just ask me anything!",
+                'system': "I'm running normally and all systems are operational.",
+                'settings': "You can customize my settings through the system configuration.",
+                'what is spark':"It a new Powerful innovation that came up this year to blow your mind.",
+                'where can i find spark':" here :https://whatsapp.com/channel/0029Vaslfu323n3citwVRj1p"
+            };
+
+            for (const [key, response] of Object.entries(responses)) {
+                if (query.toLowerCase().includes(key)) {
+                    return response;
+                }
+            }
+
+            return "I understand you're asking about " + query;
+        }
+    }
+
+    // Initialize Components
+    const systemMonitor = new SystemMonitor();
+    const messageHandler = new MessageHandler();
+
+    // Event Listeners
+    elements.searchToggle.addEventListener('click', () => {
+        elements.searchBar.classList.add('active');
+        elements.searchInput.focus();
+    });
+
+    elements.searchClose.addEventListener('click', () => {
+        elements.searchBar.classList.remove('active');
+        elements.searchInput.value = '';
+        toggleSearchButtons();
+    });
+
+    elements.searchInput.addEventListener('input', toggleSearchButtons);
+
+    elements.searchSend.addEventListener('click', async () => {
+        const query = elements.searchInput.value.trim();
+        if (query) {
+            elements.searchInput.value = '';
+            toggleSearchButtons();
+            await messageHandler.processQuery(query);
+        }
+    });
+
+    elements.searchInput.addEventListener('keypress', async (e) => {
+        if (e.key === 'Enter' && elements.searchInput.value.trim()) {
+            const query = elements.searchInput.value.trim();
+            elements.searchInput.value = '';
+            toggleSearchButtons();
+            await messageHandler.processQuery(query);
+        }
+    });
+
+    // Helper Functions
+    function toggleSearchButtons() {
+        const hasText = elements.searchInput.value.trim().length > 0;
+        elements.searchClose.classList.toggle('hidden', hasText);
+        elements.searchSend.classList.toggle('hidden', !hasText);
+    }
+
+    // Initialize chat with welcome message
+    setTimeout(async () => {
+        const hour = new Date().getHours();
+        const greeting = hour < 12 ? 'Good morning' : 
+                        hour < 18 ? 'Good afternoon' : 
+                        'Good evening';
+        
+        await messageHandler.addMessage(
+            `${greeting}, ${CONFIG.CURRENT_user}! I'm Spark, your AI assistant. How can I help you today?`,
+            false
+        );
+    }, 5500);
+});
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuration
+    const CONFIG = {
+        CURRENT_user: 'user',
+        CURRENT_DATE: '2025-01-08 07:02:22 UTC',
+        SPEECH_RECOGNITION_TIMEOUT: 5000
+    };
+
+    // DOM Elements
+    const elements = {
+        micButton: document.getElementById('mic-button'),
+        micContainer: document.getElementById('mic-button-container'),
+        searchInput: document.getElementById('search-input'),
+        splash: document.getElementById('splash'),
+        datetime: document.getElementById('datetime'),
+        username: document.getElementById('username')
+    };
+
+    // Update datetime and username
+    elements.datetime.textContent = CONFIG.CURRENT_DATE;
+    elements.username.textContent = CONFIG.CURRENT_user;
+
+    // Speech Recognition Setup
+    class SpeechRecognitionHandler {
+        constructor() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                console.error('Speech recognition not supported');
+                elements.micButton.style.display = 'none';
+                return;
+            }
+
+            this.recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            this.recognition.continuous = false;
+            this.recognition.interimResults = true;
+            this.recognition.lang = 'en-US';
+            this.setupRecognition();
+        }
+
+        setupRecognition() {
+            let silenceTimer;
+
+            this.recognition.onstart = () => {
+                elements.micButton.classList.add('listening');
+                elements.searchInput.placeholder = 'Listening...';
+            };
+
+            this.recognition.onend = () => {
+                elements.micButton.classList.remove('listening');
+                elements.searchInput.placeholder = 'Ask Spark anything...';
+                clearTimeout(silenceTimer);
+            };
+
+            this.recognition.onresult = (event) => {
+                clearTimeout(silenceTimer);
+                
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+
+                if (interimTranscript) {
+                    elements.searchInput.value = interimTranscript;
+                }
+
+                if (finalTranscript) {
+                    elements.searchInput.value = finalTranscript;
+                    this.recognition.stop();
+                }
+
+                silenceTimer = setTimeout(() => {
+                    this.recognition.stop();
+                }, CONFIG.SPEECH_RECOGNITION_TIMEOUT);
+            };
+
+            this.recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                elements.micButton.classList.remove('listening');
+                elements.searchInput.placeholder = 'Ask Spark anything...';
+                
+                if (event.error === 'not-allowed') {
+                    elements.searchInput.value = 'Please enable microphone access';
+                }
+            };
+        }
+
+        toggleListening() {
+            if (elements.micButton.classList.contains('listening')) {
+                this.recognition.stop();
+            } else {
+                elements.searchInput.value = '';
+                this.recognition.start();
+            }
+        }
+    }
+
+    // Initialize Speech Recognition
+    const speechRecognition = new SpeechRecognitionHandler();
+    
+
+    // Show mic button after splash screen
+    setTimeout(() => {
+        elements.micButton.classList.add('visible');
+    }, 5500); // Same timing as splash screen fade
+
+    // Event Listeners
+    elements.micButton.addEventListener('click', () => {
+        speechRecognition.toggleListening();
+    });
+
+    // Keyboard shortcut for mic (Space key)
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && document.activeElement !== elements.searchInput) {
+            e.preventDefault();
+            speechRecognition.toggleListening();
+        }
+    });
+});
+</script>
+
+<script >
+
+ document.addEventListener('DOMContentLoaded', function() {
+    // Configuration
+    const CONFIG = {
+        CURRENT_user: 'user',
+        CURRENT_DATE: '2025-01-08 13:16:32 UTC',
+        SPEECH_RECOGNITION_TIMEOUT: 5000,
+        MAX_MESSAGE_HISTORY: 50,
+        TYPING_SPEED: 50,
+        WAKE_WORD: 'spark'
+    };
+
+    // Define search platforms globally
+    const SEARCH_PLATFORMS = {
+        google: {
+            searchUrl: 'https://www.google.com/search?q=',
+            baseUrl: 'https://www.google.com'
+        },
+        youtube: {
+            searchUrl: 'https://www.youtube.com/results?search_query=',
+            baseUrl: 'https://www.youtube.com'
+        },
+        netflix: {
+            searchUrl: 'https://www.netflix.com/search?q=',
+            baseUrl: 'https://www.netflix.com'
+        },
+        amazon: {
+            searchUrl: 'https://www.amazon.com/s?k=',
+            baseUrl: 'https://www.amazon.com'
+        },
+        wikipedia: {
+            searchUrl: 'https://en.wikipedia.org/wiki/Special:Search?search=',
+            baseUrl: 'https://www.wikipedia.org'
+        },
+        twitter: {
+            searchUrl: 'https://twitter.com/search?q=',
+            baseUrl: 'https://twitter.com'
+        },
+        github: {
+            searchUrl: 'https://github.com/search?q=',
+            baseUrl: 'https://github.com'
+        },
+        spotify: {
+            searchUrl: 'https://open.spotify.com/search/',
+            baseUrl: 'https://open.spotify.com'
+        },
+        reddit: {
+            searchUrl: 'https://www.reddit.com/search/?q=',
+            baseUrl: 'https://www.reddit.com'
+        }
+    };
+
+    // DOM Elements
+    const elements = {
+        micButton: document.getElementById('mic-button'),
+        micContainer: document.getElementById('mic-button-container'),
+        searchInput: document.getElementById('search-input'),
+        searchToggle: document.getElementById('search-toggle'),
+        searchBar: document.getElementById('search-bar'),
+        searchClose: document.getElementById('search-close'),
+        searchSend: document.getElementById('search-send'),
+        chatContainer: document.getElementById('chat-container'),
+        splash: document.getElementById('splash'),
+        datetime: document.getElementById('datetime'),
+        username: document.getElementById('username'),
+        systemInfo: {
+            datetime: document.getElementById('datetime'),
+            username: document.getElementById('username'),
+            battery: document.getElementById('battery'),
+            network: document.getElementById('network')
+        }
+    };
+
+    class VoiceCommandProcessor {
+        static processCommand(command) {
+            const lowerCommand = command.toLowerCase().trim();
+            
+            // Check for wake word "spark"
+            if (!lowerCommand.startsWith(CONFIG.WAKE_WORD)) {
+                console.log('Wake word not detected');
+                return null;
+            }
+
+            // Remove wake word from command
+            const actualCommand = lowerCommand.replace(CONFIG.WAKE_WORD, '').trim();
+
+            // Process platform-specific searches
+            for (const [platform, urls] of Object.entries(SEARCH_PLATFORMS)) {
+                if (actualCommand.startsWith(platform)) {
+                    const searchQuery = actualCommand.replace(platform, '').trim();
+                    if (searchQuery) {
+                        const url = `${urls.searchUrl}${encodeURIComponent(searchQuery)}`;
+                        window.open(url, '_blank');
+                        return `Searching ${platform} for: ${searchQuery}`;
+                    } else {
+                        window.open(urls.baseUrl, '_blank');
+                        return `Opening ${platform}`;
+                    }
+                }
+            }
+
+            // Handle generic website opening
+            if (actualCommand.startsWith('open')) {
+                const website = actualCommand.replace('open', '').trim();
+                if (website) {
+                    const url = website.includes('http') ? website : `https://${website}.com`;
+                    window.open(url, '_blank');
+                    return `Opening ${website}`;
+                }
+            }
+
+            return null;
+        }
+    }
+
+    // Speech Recognition Handler
+    class SpeechRecognitionHandler {
+        constructor(messageHandler) {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                console.error('Speech recognition not supported');
+                elements.micButton.style.display = 'none';
+                return;
+            }
+
+            this.messageHandler = messageHandler;
+            this.recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            this.recognition.continuous = false;
+            this.recognition.interimResults = true;
+            this.recognition.lang = 'en-US';
+            this.setupRecognition();
+        }
+
+        setupRecognition() {
+            let silenceTimer;
+
+            this.recognition.onstart = () => {
+                elements.micButton.classList.add('listening');
+                elements.searchInput.placeholder = 'Listening...';
+            };
+
+            this.recognition.onend = () => {
+                elements.micButton.classList.remove('listening');
+                elements.searchInput.placeholder = 'Ask Spark anything...';
+                clearTimeout(silenceTimer);
+            };
+
+            this.recognition.onresult = (event) => {
+                clearTimeout(silenceTimer);
+                
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+
+                if (interimTranscript) {
+                    elements.searchInput.value = interimTranscript;
+                }
+
+                if (finalTranscript) {
+                    elements.searchInput.value = finalTranscript;
+                    const result = VoiceCommandProcessor.processCommand(finalTranscript);
+                    if (result) {
+                        this.messageHandler.addMessage(result, false);
+                    }
+                    this.recognition.stop();
+                }
+
+                silenceTimer = setTimeout(() => {
+                    this.recognition.stop();
+                }, CONFIG.SPEECH_RECOGNITION_TIMEOUT);
+            };
+
+            this.recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                elements.micButton.classList.remove('listening');
+                elements.searchInput.placeholder = 'Ask Spark anything...';
+                
+                if (event.error === 'not-allowed') {
+                    this.messageHandler.addMessage('Please enable microphone access', false);
+                }
+            };
+        }
+
+        toggleListening() {
+            if (elements.micButton.classList.contains('listening')) {
+                this.recognition.stop();
+            } else {
+                elements.searchInput.value = '';
+                this.recognition.start();
+            }
+        }
+    }
+
+    // Message Handler
+    class MessageHandler {
+        constructor() {
+            this.messageHistory = [];
+        }
+
+        async addMessage(text, isuser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isuser ? 'user-message' : 'ai-message'}`;
+            
+            const iconDiv = document.createElement('div');
+            iconDiv.className = 'message-icon';
+            iconDiv.innerHTML = isuser ? 
+                '<i class="fas fa-user"></i>' : 
+                '<i class="fas fa-robot"></i>';
+            messageDiv.appendChild(iconDiv);
+
+            const textContent = document.createElement('span');
+            textContent.textContent = text;
+            messageDiv.appendChild(textContent);
+            
+            elements.chatContainer.appendChild(messageDiv);
+            elements.chatContainer.scrollTop = elements.chatContainer.scrollHeight;
+
+            this.messageHistory.push({
+                text,
+                isuser,
+                timestamp: new Date().toISOString()
+            });
+
+            if (this.messageHistory.length > CONFIG.MAX_MESSAGE_HISTORY) {
+                this.messageHistory.shift();
+            }
+        }
+    }
+
+    // Initialize components
+    const messageHandler = new MessageHandler();
+    const speechRecognition = new SpeechRecognitionHandler(messageHandler);
+
+    // Update datetime and username
+    elements.datetime.textContent = CONFIG.CURRENT_DATE;
+    elements.username.textContent = CONFIG.CURRENT_user;
+
+    // Show mic button after splash screen
+    setTimeout(() => {
+        elements.micButton.classList.add('visible');
+    }, 5500);
+
+    // Event Listeners
+    elements.micButton.addEventListener('click', () => {
+        speechRecognition.toggleListening();
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && document.activeElement !== elements.searchInput) {
+            e.preventDefault();
+            speechRecognition.toggleListening();
+        }
+    });
+
+    elements.searchToggle.addEventListener('click', () => {
+        elements.searchBar.classList.add('active');
+        elements.searchInput.focus();
+    });
+
+    elements.searchClose.addEventListener('click', () => {
+        elements.searchBar.classList.remove('active');
+        elements.searchInput.value = '';
+        toggleSearchButtons();
+    });
+
+    elements.searchInput.addEventListener('input', toggleSearchButtons);
+
+    function toggleSearchButtons() {
+        const hasText = elements.searchInput.value.trim().length > 0;
+        elements.searchClose.classList.toggle('hidden', hasText);
+        elements.searchSend.classList.toggle('hidden', !hasText);
+    }
+
+    // Initialize with welcome message
+    setTimeout(() => {
+        const hour = new Date().getHours();
+        const greeting = hour < 12 ? 'Good morning' : 
+                        hour < 18 ? 'Good afternoon' : 
+                        'Good evening';
+      
+      
+    }, 5500);
+});
+   
+</script></body>
+<!--Spark AI-->
+</html>
